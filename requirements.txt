@@ -1,0 +1,23 @@
+# Data Science Core
+pandas
+numpy
+matplotlib
+seaborn
+
+# NLP
+spacy
+
+# Deep Learning (PyTorch + Lightning)
+torch
+torchvision
+torchaudio
+pytorch-lightning
+
+# Big Data
+pyspark==3.5.0
+
+# Engineering & Tools
+jupyterlab
+pydantic
+scikit-learn
+tqdm
