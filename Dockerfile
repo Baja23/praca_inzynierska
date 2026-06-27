@@ -1,39 +1,46 @@
-FROM continuumio/miniconda3
+FROM nvidia/cuda:12.1.0-cudnn8-runtime-ubuntu22.04
 
-LABEL maintainer="Student"
+LABEL container = "praca-inzynierska"
 
-# 1. Instalacja narzędzi systemowych
-# Dodalem 'git' - przyda sie do instalacji paczek z GitHuba
-# Dodalem 'curl' - czasem potrzebny do pobierania danych
-RUN apt-get update && apt-get install -y \
-    procps \
-    build-essential \
-    git \
+ARG PYTHON_VERSION=3.11
+ARG JAVA_VERSION=17
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    JAVA_HOME=/usr/lib/jvm/java-${JAVA_VERSION}-openjdk-amd64 \
+    PYSPARK_PYTHON=python3.11 \
+    PYSPARK_DRIVER_PYTHON=python3.11
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python${PYTHON_VERSION} \
+    python${PYTHON_VERSION}-dev \
+    python3-pip \
+    openjdk-${JAVA_VERSION}-jdk-headless \
     curl \
+    wget \
+    git \
+    vim \
+    build-essential \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+RUN update-alternatives --install /usr/bin/python python \
+    /usr/bin/python${PYTHON_VERSION} 1
 
-# 2. Konfiguracja Condy na 'libmamba' (Przyspieszenie budowania)
-# To sprawia, że rozwiązywanie zależności trwa sekundy zamiast minut
-RUN conda config --set solver libmamba
+WORKDIR /workspace
 
-# 3. Kopiujemy plik środowiska
-COPY environment.yml .
+COPY requirements.txt .
 
-# 4. Aktualizacja środowiska 'base'
-# Flaga --prune usuwa stare pakiety, które nie są już potrzebne
-RUN conda env update -n base -f environment.yml --prune && \
-    conda clean -afy
+RUN python -m pip install --upgrade pip && \
+    python -m pip install torch==2.3.0 --index-url https://download.pytorch.org/whl/cu121 && \
+    python -m pip install -r requirements.txt
 
-# 5. Ustawienie JAVA_HOME
-# Dla środowiska 'base' w minicondzie to jest poprawna ścieżka
-ENV JAVA_HOME=/opt/conda
-ENV PATH=$JAVA_HOME/bin:$PATH
+RUN python -m pip install https://github.com/explosion/spacy-models/releases/download/es_core_news_md-3.7.0/es_core_news_md-3.7.0.tar.gz
 
-# 6. Pobranie modelu spaCy
-# Upewniamy się, że python widzi zainstalowane biblioteki
-RUN python -m spacy download es_core_news_md
+EXPOSE 8888 6006
 
-# 7. Start JupyterLab
-CMD ["jupyter", "lab", "--ip=0.0.0.0", "--allow-root", "--no-browser"]
+CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", \
+     "--no-browser", "--allow-root", "--NotebookApp.token=''"]

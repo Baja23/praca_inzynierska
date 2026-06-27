@@ -1,0 +1,17 @@
+services:
+  ml-workspace:
+    build: .
+    container_name: praca_inzynierska
+    ports:
+      - "8888:8888" # Jupyter
+      - "6006:6006" # Tensorboard
+    volumes:
+      - .:/workspace
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
