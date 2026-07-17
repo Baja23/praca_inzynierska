@@ -1,6 +1,6 @@
 from pyspark.sql import SparkSession
 
-# Inicjalizacja Sparka (to może zająć 2-3 sekundy, bo wstaje JVM)
+# Inicjalizacja Sparka
 spark = SparkSession.builder \
     .appName("TestInzynierki") \
     .master("local[*]") \
